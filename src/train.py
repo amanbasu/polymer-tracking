@@ -12,9 +12,9 @@ INIT_EPOCH = 0
 EPOCHS = 100
 BATCH_SIZE = 64
 IMG_SIZE = 31                                                                  
-CHANNELS = 1
 LEARNING_RATE = 0.001
-STEPS = 173
+STEPS = 9000 // BATCH_SIZE + 1
+SAVE_PATH = '../res/train_output/model_checkpoint_unet.pt'
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print('Using:', device)
@@ -25,26 +25,22 @@ class dice_loss(torch.nn.Module):
         self.smooth = 1.
 
     def forward(self, logits, labels):
-       logf = torch.sigmoid(logits).view(-1)
-       labf = labels.view(-1)
-       intersection = (logf * labf).sum()
+        # index 0 is for segmentation 
+        logf = torch.sigmoid(logits[0]).view(-1)
+        labf = labels[0].view(-1)
+        intersection = (logf * labf).sum()
 
-       num = 2. * intersection + self.smooth
-       den = logf.sum() + labf.sum() + self.smooth
-       return 1 - (num/den)
+        num = 2. * intersection + self.smooth
+        den = logf.sum() + labf.sum() + self.smooth
+        return 1 - (num/den)
 
 class crossentropy_loss(torch.nn.Module):
     def __init__(self):
         super(crossentropy_loss, self).__init__()
+        loss = torch.nn.CrossEntropyLoss()
 
     def forward(self, logits, labels):
-       logf = torch.sigmoid(logits).view(-1)
-       labf = labels.view(-1)
-       intersection = (logf * labf).sum()
-
-       num = 2. * intersection + self.smooth
-       den = logf.sum() + labf.sum() + self.smooth
-       return 1 - (num/den)
+       return self.loss(logits[1], labels[1])
 
 def get_dataloader():
     trainDataset = CustomDataGenerator(
@@ -58,7 +54,6 @@ def get_dataloader():
         '../images/val',
         transform=None
     )
-
     trainLoader = DataLoader(
         trainDataset,
         batch_size=BATCH_SIZE,
@@ -73,7 +68,6 @@ def get_dataloader():
         pin_memory=True, 
         num_workers=4
     )
-
     return iter(trainLoader), iter(valLoader)
 
 def train(model, criterion, opt, scheduler):
@@ -92,7 +86,7 @@ def train(model, criterion, opt, scheduler):
                 opt.zero_grad(set_to_none=True)                                 # clear gradients w.r.t. parameters
 
                 mask, label = model(image)
-                loss = criterion(mask_gt, mask, label_gt, label)
+                loss = criterion([mask, label], [mask_gt, label_gt])
 
                 loss.backward()                                                 # getting gradients
                 opt.step()                                                      # updating parameters
@@ -129,18 +123,17 @@ def train(model, criterion, opt, scheduler):
 if __name__ == '__main__':
 
     # plug-in your model here
-    NAME = sys.argv[1]
-    model, SAVE_PATH = UNet(1)
-    print(SAVE_PATH)
+    model = UNet(channels=1, classes=1, subpixels=9)
 
-    criterion = dice_loss()
+    criterion = dice_loss() + crossentropy_loss()
     opt = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
-    scheduler = torch.optim.lr_scheduler.OneCycleLR(opt,
-                                                    max_lr=LEARNING_RATE*10,
-                                                    steps_per_epoch=STEPS,
-                                                    pct_start=0.15,
-                                                    epochs=EPOCHS
-                                                    )
+    scheduler = torch.optim.lr_scheduler.OneCycleLR(
+        opt,
+        max_lr=LEARNING_RATE*10,
+        steps_per_epoch=STEPS,
+        pct_start=0.15,
+        epochs=EPOCHS
+    )
 
     # start from last checkpoint
     if INIT_EPOCH > 0:
