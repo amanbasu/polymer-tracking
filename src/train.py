@@ -9,10 +9,10 @@ from generator import CustomDataGenerator
 from UNet import UNet
 
 INIT_EPOCH = 0
-EPOCHS = 100
+EPOCHS = 50
 BATCH_SIZE = 64
 IMG_SIZE = 31                                                                  
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.0001
 STEPS = 9000 // BATCH_SIZE + 1
 SAVE_PATH = '../res/train_output/model_checkpoint_unet.pt'
 
@@ -25,22 +25,25 @@ class dice_loss(torch.nn.Module):
         self.smooth = 1.
 
     def forward(self, logits, labels):
-        # index 0 is for segmentation 
-        logf = torch.sigmoid(logits[0]).view(-1)
-        labf = labels[0].view(-1)
+        logf = torch.sigmoid(logits).view(-1)
+        labf = labels.view(-1)
         intersection = (logf * labf).sum()
 
         num = 2. * intersection + self.smooth
         den = logf.sum() + labf.sum() + self.smooth
         return 1 - (num/den)
 
-class crossentropy_loss(torch.nn.Module):
+class combine_loss(torch.nn.Module):
     def __init__(self):
-        super(crossentropy_loss, self).__init__()
-        loss = torch.nn.CrossEntropyLoss()
+        super(combine_loss, self).__init__()
+        self.bceLoss = torch.nn.BCEWithLogitsLoss()
+        self.dice_loss = dice_loss()
 
     def forward(self, logits, labels):
-       return self.loss(logits[1], labels[1])
+        dice = self.dice_loss(logits[0], labels[0])
+        bce = self.bceLoss(logits[1], labels[1].float())
+        return dice
+            
 
 def get_dataloader():
     trainDataset = CustomDataGenerator(
@@ -96,20 +99,24 @@ def train(model, criterion, opt, scheduler):
 
         # get model performace on val set
         with torch.no_grad():
-            accuracy = []
+            dice, accuracy = [], []
+            dloss = dice_loss()
             try:
                 for image, mask_gt, label_gt in tqdm(valLoader):
                     image = image.to(device)                                                  
                     mask_gt = mask_gt.to(device)
                     label_gt = label_gt.to(device)
 
-                    mask, label = model(images)
-                    ls = criterion(mask_gt, mask, label_gt, label).item()
-                    accuracy += [1 - ls]
+                    mask, label = model(image)
+                    dice += [1 - dloss(mask, mask_gt).item()]
+                    acc = torch.argmax(label, axis=1) == \
+                        torch.argmax(label_gt, axis=1)
+                    accuracy.extend(acc.cpu().numpy().ravel())
             except StopIteration:
                 pass
-            
-            print('Epoch: {}/{} - accuracy: {:.4f}'.format(epoch+1, EPOCHS, np.mean(accuracy)))
+            print('Epoch: {}/{} - accuracy: {:.4f} - dice: {:.4f}'.format(
+                epoch+1, EPOCHS, np.mean(accuracy), np.mean(dice))
+            )
 
         # save model checkpoint
         if (epoch + 1) % 5 == 0:
@@ -123,9 +130,9 @@ def train(model, criterion, opt, scheduler):
 if __name__ == '__main__':
 
     # plug-in your model here
-    model = UNet(channels=1, classes=1, subpixels=9)
+    model = UNet(channels=1, classes=1, subpixels=9).to(device)  
 
-    criterion = dice_loss() + crossentropy_loss()
+    criterion = combine_loss()
     opt = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
     scheduler = torch.optim.lr_scheduler.OneCycleLR(
         opt,

@@ -37,7 +37,6 @@ class CustomDataGenerator(torch.utils.data.Dataset):
         if self.transform:
             sample = self.transform(sample)
             img, tip = sample['image'], sample['tip']
-            subp_label = sample['subpixel'].reshape(-1)
 
         # normalize image
         img = img.astype(np.float32)
@@ -47,6 +46,8 @@ class CustomDataGenerator(torch.utils.data.Dataset):
         # treat tip as a segmentation mask
         mask = np.zeros_like(img[0])
         mask[tip] = 1
+
+        subp_label = subp_label.reshape(-1)
 
         return img, mask, subp_label
     
