@@ -10,7 +10,7 @@ from UNet import UNet
 
 INIT_EPOCH = 0
 EPOCHS = 50
-BATCH_SIZE = 64
+BATCH_SIZE = 1024
 IMG_SIZE = 31                                                                  
 LEARNING_RATE = 0.0001
 STEPS = 9000 // BATCH_SIZE + 1
