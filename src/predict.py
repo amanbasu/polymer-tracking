@@ -7,8 +7,7 @@ from torchvision import transforms
 from torch.utils.data import DataLoader
 from generator import CustomDataGenerator
 from UNet import UNet
-import tifffile
-import os
+import tifffile, json
 
 BATCH_SIZE = 1024
 LOAD_PATH = '../res/train_output/model_checkpoint_unet.pt'
@@ -37,22 +36,24 @@ def get_dataloader():
 
 def save_predictions(image, mask, tip_gt, label, subpixel_gt, fname):
     base_path = '../res/prediction/'
-    with open('../res/predictions.txt', 'a+') as f:
-        for i in range(len(fname)):
-            tip = np.where(mask[i][0]==mask[i][0].max())
-            subpixel = np.argmax(label[i])
+    for i in range(len(fname)):
+        tip = np.where(mask[i][0]==mask[i][0].max())
+        subpixel = np.argmax(label[i])
 
-            content = '\t'.join(
-                [fname[i], f'{tip[0][0]},{tip[1][0]}', 
-                f'{tip_gt[i][0]},{tip_gt[i][1]}', 
-                chr(subpixel+65), chr(subpixel_gt[i]+65)]
-            )
-            f.write(content+'\n')
-
-            tifffile.imwrite(
-                base_path + f'{fname[i]}_{chr(subpixel_gt[i]+65)}.tif',
-                data=image[i][0]
-            )
+        metadata = {
+            'tip': f'{tip[0][0]},{tip[1][0]}',
+            'tip_gt': f'{tip_gt[i][0]},{tip_gt[i][1]}',
+            'subpixel': chr(subpixel+65),
+            'subpixel_gt': chr(subpixel_gt[i]+65),
+        }
+        extra_tags = [
+            ("MicroManagerMetadata", 's', 0, json.dumps(metadata), True)
+        ]
+        tifffile.imwrite(
+            base_path + f'{fname[i]}_{chr(subpixel_gt[i]+65)}.tif',
+            data=image[i][0],
+            extratags=extra_tags,
+        )
     
 def predict(model):
     global BATCH_SIZE, device
@@ -78,9 +79,6 @@ def predict(model):
 
 if __name__ == '__main__':
 
-    if os.path.isfile('../res/predictions.txt'):
-        os.remove('../res/predictions.txt')
-        
     # plug-in your model here
     model = UNet(channels=1, classes=1, subpixels=9).to(device)  
     checkpoint = torch.load(LOAD_PATH)

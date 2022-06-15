@@ -37,7 +37,7 @@ class CustomDataGenerator(torch.utils.data.Dataset):
 
         if self.transform:
             sample = self.transform(sample)
-            img, tip = sample['image'], sample['tip']
+            img, tip, subp_label = sample['image'], sample['tip'], sample['subpixel']
 
         # normalize image
         img = img.astype(np.float32)
