@@ -37,8 +37,6 @@ def get_dataloader():
 
 def save_predictions(image, mask, tip_gt, label, subpixel_gt, fname):
     base_path = '../res/prediction/'
-    if os.path.isfile('../res/predictions.txt'):
-        os.remove('../res/predictions.txt')
     with open('../res/predictions.txt', 'a+') as f:
         for i in range(len(fname)):
             tip = np.where(mask[i][0]==mask[i][0].max())
@@ -80,6 +78,9 @@ def predict(model):
 
 if __name__ == '__main__':
 
+    if os.path.isfile('../res/predictions.txt'):
+        os.remove('../res/predictions.txt')
+        
     # plug-in your model here
     model = UNet(channels=1, classes=1, subpixels=9).to(device)  
     checkpoint = torch.load(LOAD_PATH)
