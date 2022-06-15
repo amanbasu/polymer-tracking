@@ -5,8 +5,8 @@ import numpy as np
 
 class CustomDataGenerator(torch.utils.data.Dataset):
 
-    def __init__(self, root_dir, subpixels=9, transform=None, fname=False):
-        self.fname = fname                                                      # returns image file name when True
+    def __init__(self, root_dir, subpixels=9, transform=None, train=True):
+        self.train = train                                                      # returns image file name when True
         self.dir = root_dir
         self.subpixels = subpixels
         self.transform = transform                                              # image transforms for data augmentation
@@ -50,9 +50,9 @@ class CustomDataGenerator(torch.utils.data.Dataset):
 
         subp_label = subp_label.reshape(-1)
 
-        if self.fname:
-            return img, mask, subp_label, fname.split('/')[-1][:-4]
-        return img, mask, subp_label
+        if self.train:
+            return img, mask, subp_label
+        return img, np.array(tip), np.argmax(subp_label), fname.split('/')[-1][:-4]
     
     def read_tif(self, filename):
         frames = tifffile.TiffFile(filename)
