@@ -36,7 +36,7 @@ def get_dataloader():
 
 def save_predictions(image, mask, mask_gt, label, label_gt, fname):
     base_path = '../res/prediction/'
-    with open('../res/predictions.txt', 'w+') as f:
+    with open('../res/predictions.txt', 'a+') as f:
         for i in range(len(fname)):
             tip = np.where(mask[i][0]==mask[i][0].max())
             tip_gt = np.where(mask_gt[i]==mask_gt[i].max())
