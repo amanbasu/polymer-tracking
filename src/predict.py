@@ -7,7 +7,7 @@ from torchvision import transforms
 from torch.utils.data import DataLoader
 from generator import CustomDataGenerator
 from UNet import UNet
-import cv2
+import tifffile
 
 BATCH_SIZE = 1024
 LOAD_PATH = '../res/train_output/model_checkpoint_unet.pt'
@@ -28,7 +28,7 @@ def get_dataloader():
     valLoader = DataLoader(
         valDataset, 
         batch_size=BATCH_SIZE, 
-        shuffle=False, 
+        shuffle=True, 
         pin_memory=True, 
         num_workers=4
     )
@@ -38,8 +38,6 @@ def save_predictions(image, mask, mask_gt, label, label_gt, fname):
     base_path = '../res/prediction/'
     with open('../res/predictions.txt', 'w+') as f:
         for i in range(len(fname)):
-            cv2.imwrite(base_path + f'{fname[i]}.jpg', image[i][0])
-
             tip = np.where(mask[i][0]==mask[i][0].max())
             tip_gt = np.where(mask_gt[i]==mask_gt[i].max())
 
@@ -52,6 +50,11 @@ def save_predictions(image, mask, mask_gt, label, label_gt, fname):
                 chr(subpixel+65), chr(subpixel_gt+65)]
             )
             f.write(content+'\n')
+
+            tifffile.imwrite(
+                base_path + f'{fname[i]}_{chr(subpixel_gt+65)}.tif',
+                data=image[i][0]
+            )
     
 def predict(model):
     global BATCH_SIZE, device
