@@ -5,7 +5,8 @@ import numpy as np
 
 class CustomDataGenerator(torch.utils.data.Dataset):
 
-    def __init__(self, root_dir, subpixels=9, transform=None):
+    def __init__(self, root_dir, subpixels=9, transform=None, fname=False):
+        self.fname = fname                                                      # returns image file name when True
         self.dir = root_dir
         self.subpixels = subpixels
         self.transform = transform                                              # image transforms for data augmentation
@@ -45,10 +46,12 @@ class CustomDataGenerator(torch.utils.data.Dataset):
         
         # treat tip as a segmentation mask
         mask = np.zeros_like(img[0])
-        mask[tip] = 1
+        mask[tip[0], tip[1]] = 1
 
         subp_label = subp_label.reshape(-1)
 
+        if self.fname:
+            return img, mask, subp_label, fname.split('/')[-1][:-4]
         return img, mask, subp_label
     
     def read_tif(self, filename):
