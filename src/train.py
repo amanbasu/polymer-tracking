@@ -49,13 +49,15 @@ def get_dataloader():
     trainDataset = CustomDataGenerator(
         '../images/train', 
         transform=transforms.Compose([
-            RandomCrop(0.8),
             RandomFlip(0.5),
+            RandomCrop(IMG_SIZE, 0.8),
         ])
     )
     valDataset = CustomDataGenerator(
         '../images/val',
-        transform=None
+        transform=transforms.Compose([
+            RandomCrop(IMG_SIZE, 0.0),
+        ])
     )
     trainLoader = DataLoader(
         trainDataset,

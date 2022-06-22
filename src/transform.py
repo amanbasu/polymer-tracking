@@ -1,5 +1,4 @@
 import cv2
-import torch
 import numpy as np
 
 class RandomFlip(object):
@@ -53,32 +52,44 @@ class RandomCrop(object):
     Crops the image randomly in a sample.
     '''
 
-    def __init__(self, prob=0.5):
+    def __init__(self, size, prob=0.5):
         assert isinstance(prob, (float, tuple))
+        self.size = size
         self.prob = prob
 
     def __call__(self, sample):
         image, tip = sample['image'], sample['tip']
-        size = len(image)
-        
-        if np.random.random() < self.prob:
-            starti, startj = np.random.randint(0, size//2-4, size=2)
-            endi, endj = np.random.randint(size//2+3, size, size=2)
+        h, _ = image.shape
 
-            imgc = np.clip(
-                (0.5 + np.random.random(image.shape)) * image.mean(), 
-                image.min(),
-                np.median(image)
-            )
-            h, w = endi - starti, endj - startj
+        if np.random.random() < self.prob:
+            # random crop
+            starti, startj = np.random.randint(0, h - self.size, size=2)         
+        else:
+            # center crop
+            starti, startj = (h - self.size)//2, (h - self.size)//2            
+    
+        endi, endj = starti + self.size, startj + self.size            
+        image = image[starti:endi, startj:endj]
+        tip = (tip[0] - starti, tip[1] - startj)
+        
+        # if np.random.random() < self.prob:
+        #     starti, startj = np.random.randint(0, size//2-4, size=2)
+        #     endi, endj = np.random.randint(size//2+3, size, size=2)
+
+        #     imgc = np.clip(
+        #         (0.5 + np.random.random(image.shape)) * image.mean(), 
+        #         image.min(),
+        #         np.median(image)
+        #     )
+        #     h, w = endi - starti, endj - startj
             
-            i = np.random.randint(0, size-h)
-            j = np.random.randint(0, size-w)
+        #     i = np.random.randint(0, size-h)
+        #     j = np.random.randint(0, size-w)
             
-            imgc[i:i+h, j:j+w] = image[starti:endi, startj:endj]
+        #     imgc[i:i+h, j:j+w] = image[starti:endi, startj:endj]
             
-            image = imgc
-            tip = (tip[0] - starti + i, tip[1] - startj + j)
+        #     image = imgc
+        #     tip = (tip[0] - starti + i, tip[1] - startj + j)
 
         sample['image'], sample['tip'] = image, tip
         return sample

@@ -10,6 +10,7 @@ from UNet import UNet
 import tifffile, json
 
 BATCH_SIZE = 1024
+IMG_SIZE = 31
 LOAD_PATH = '../res/train_output/model_checkpoint_unet.pt'
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -20,8 +21,7 @@ def get_dataloader():
     valDataset = CustomDataGenerator(
         '../images/val',
         transform=transforms.Compose([
-            RandomCrop(0.5),
-            RandomFlip(0.5),
+            RandomCrop(IMG_SIZE, 0.0),
         ]),
         train=False
     )
