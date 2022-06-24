@@ -60,3 +60,28 @@ class CustomDataGenerator(torch.utils.data.Dataset):
         page = frames.pages[0]
         metadata = page.tags["MicroManagerMetadata"].value
         return tifffile.imread(filename), metadata
+
+class TestDataGenerator(torch.utils.data.Dataset):
+
+    def __init__(self, root_dir):
+        self.dir = root_dir
+        self.images = sorted(glob.glob(self.dir + '/comet_*.tif'))
+
+    def __len__(self):
+        return len(self.images)
+
+    def __getitem__(self, idx):
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+    
+        # read image
+        fname = self.images[idx]
+        img = tifffile.imread(fname)
+        
+        # normalize image
+        img = img.astype(np.float32)
+        # img = (img - img.min()) / (img.max() - img.min())
+        img = img / 1000
+        img = np.expand_dims(img, axis=0)                                       # add channel dimension
+        
+        return img, fname.split('/')[-1][:-4]
