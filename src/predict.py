@@ -34,7 +34,10 @@ def get_dataloader():
 def save_predictions(image, mask, label, fname):
     global SAVE_PATH
     for i in range(len(fname)):
-        tip = np.where(mask[i][0]==mask[i][0].max())
+        if (mask[i][0] > 0.5).sum() > 0:
+            tip = np.where(mask[i][0]==mask[i][0].max())
+        else:
+            tip = [[0], [0]]
         subpixel = np.argmax(label[i])
 
         metadata = {
