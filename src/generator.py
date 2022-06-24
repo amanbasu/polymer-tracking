@@ -41,7 +41,8 @@ class CustomDataGenerator(torch.utils.data.Dataset):
 
         # normalize image
         img = img.astype(np.float32)
-        img = (img - img.min()) / (img.max() - img.min())
+        # img = (img - img.min()) / (img.max() - img.min())
+        img = img / 1000
         img = np.expand_dims(img, axis=0)                                       # add channel dimension
         
         # treat tip as a segmentation mask
