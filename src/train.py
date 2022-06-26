@@ -44,7 +44,6 @@ class combine_loss(torch.nn.Module):
         bce = self.bceLoss(logits[1], labels[1].float())
         return dice
             
-
 def get_dataloader():
     trainDataset = CustomDataGenerator(
         '../images/train', 

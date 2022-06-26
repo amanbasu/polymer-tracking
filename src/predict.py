@@ -20,7 +20,10 @@ print('Using:', device)
 def get_dataloader():
     # replace with test
     testDataset = TestDataGenerator(
-        '../images/test'
+        '../images/test',
+        transform=transforms.Compose([
+                RandomCrop(31, 0.5),
+            ])
     )
     testLoader = DataLoader(
         testDataset, 
