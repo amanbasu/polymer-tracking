@@ -42,7 +42,7 @@ class combine_loss(torch.nn.Module):
     def forward(self, logits, labels):
         dice = self.dice_loss(logits[0], labels[0])
         bce = self.bceLoss(logits[1], labels[1].float())
-        return dice
+        return dice + bce
             
 def get_dataloader():
     trainDataset = CustomDataGenerator(

@@ -60,6 +60,7 @@ class CustomDataGenerator(torch.utils.data.Dataset):
         # add last label for no-comet
         subp_label = np.hstack([subp_label, [0]])
 
+        # subp_label = np.array([1, 0])
         if self.train:
             return img, mask, subp_label
         return img, np.array(tip), np.argmax(subp_label), fname.split('/')[-1][:-4]
@@ -96,6 +97,7 @@ class CustomDataGenerator(torch.utils.data.Dataset):
         subp_label[-1] = 1
         subp_label = subp_label.reshape(-1)
 
+        # subp_label = np.array([0, 1])
         if self.train:
             return img, mask, subp_label
         return img, np.array(tip), np.argmax(subp_label), fname.split('/')[-1][:-4]
