@@ -75,7 +75,7 @@ class UNet(nn.Module):
         # subpixel classifier
         self.linear1 = Linear(512 * 4 * 4, 512, activation='relu')
         self.linear2 = Linear(512, 256, activation='relu')
-        self.linear3 = Linear(256, self.SUBPIXELS, activation=None)
+        self.linear3 = Linear(256, self.SUBPIXELS + 1, activation=None)
 
     def forward(self, x):
         size = x.shape[-1]

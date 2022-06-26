@@ -20,10 +20,7 @@ print('Using:', device)
 def get_dataloader():
     # replace with test
     testDataset = TestDataGenerator(
-        '../images/test',
-        transform=transforms.Compose([
-                RandomCrop(31, 0.5),
-            ])
+        '../images/test'
     )
     testLoader = DataLoader(
         testDataset, 
@@ -37,15 +34,15 @@ def get_dataloader():
 def save_predictions(image, mask, label, fname):
     global SAVE_PATH
     for i in range(len(fname)):
-        if (mask[i][0] > 0.5).sum() > 0:
-            tip = np.where(mask[i][0]==mask[i][0].max())
-        else:
-            tip = [[0], [0]]
         subpixel = np.argmax(label[i])
+        if subpixel == 9:
+            tip = [[0], [0]]
+        else:
+            tip = np.where(mask[i][0]==mask[i][0].max())            
 
         metadata = {
             'tip': f'{tip[0][0]},{tip[1][0]}',
-            'subpixel': chr(subpixel+65),
+            'subpixel': chr(subpixel+65) if subpixel < 9 else 'N',
         }
         extra_tags = [
             ("MicroManagerMetadata", 's', 0, json.dumps(metadata), True)
