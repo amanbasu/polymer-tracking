@@ -92,6 +92,13 @@ def train(model, criterion, opt, scheduler):
                 mask, label = model(image)
                 loss = criterion([mask, label], [mask_gt, label_gt])
 
+                # regularization
+                weight = torch.tensor(0.).to(device) 
+                for parameter in model.parameters():
+                    weight += torch.norm(parameter)
+                l2_loss = 0.001 * weight
+                loss += l2_loss
+
                 loss.backward()                                                 # getting gradients
                 opt.step()                                                      # updating parameters
                 scheduler.step()                                                # to change the learing rate
