@@ -49,7 +49,7 @@ def save_predictions(image, mask, label, fname):
         ]
         tifffile.imwrite(
             SAVE_PATH + f'{fname[i]}.tif',
-            data=image[i][0],
+            data=mask[i][0],
             extratags=extra_tags,
         )
     
@@ -75,7 +75,7 @@ def predict(model):
 if __name__ == '__main__':
 
     # plug-in your model here
-    model = UNet(channels=1, classes=1, subpixels=9).to(device)  
+    model = UNet(channels=1, classes=1, subpixels=8).to(device)  
     checkpoint = torch.load(LOAD_PATH)
     model.load_state_dict(checkpoint['model_state_dict'])
     predict(model)

@@ -20,7 +20,7 @@ class CustomDataGenerator(torch.utils.data.Dataset):
             idx = idx.tolist()
 
         # send noise instead
-        if np.random.random() < 0.1:
+        if np.random.random() < 0.0:
             return self.noisy_image(idx)
         else:
             return self.comet_image(idx)
@@ -58,7 +58,7 @@ class CustomDataGenerator(torch.utils.data.Dataset):
 
         subp_label = subp_label.reshape(-1)
         # add last label for no-comet
-        subp_label = np.hstack([subp_label, [0]])
+        # subp_label = np.hstack([subp_label, [0]])
 
         # subp_label = np.array([1, 0])
         if self.train:

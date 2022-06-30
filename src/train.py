@@ -42,14 +42,14 @@ class combine_loss(torch.nn.Module):
     def forward(self, logits, labels):
         dice = self.dice_loss(logits[0], labels[0])
         bce = self.bceLoss(logits[1], labels[1].float())
-        return dice + bce
+        return dice #+ bce
             
 def get_dataloader():
     trainDataset = CustomDataGenerator(
         '../images/train', 
         transform=transforms.Compose([
-            RandomFlip(0.5),
-            RandomCrop(IMG_SIZE, 0.8),
+            RandomFlip(0.7),
+            RandomCrop(IMG_SIZE, 0.9),
         ])
     )
     valDataset = CustomDataGenerator(
@@ -96,7 +96,7 @@ def train(model, criterion, opt, scheduler):
                 weight = torch.tensor(0.).to(device) 
                 for parameter in model.parameters():
                     weight += torch.norm(parameter)
-                l2_loss = 0.001 * weight
+                l2_loss = 0.005 * weight
                 loss += l2_loss
 
                 loss.backward()                                                 # getting gradients
@@ -138,7 +138,7 @@ def train(model, criterion, opt, scheduler):
 if __name__ == '__main__':
 
     # plug-in your model here
-    model = UNet(channels=1, classes=1, subpixels=9).to(device)  
+    model = UNet(channels=1, classes=1, subpixels=8).to(device)  
 
     criterion = combine_loss()
     opt = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
