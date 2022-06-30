@@ -15,6 +15,7 @@ IMG_SIZE = 31
 LEARNING_RATE = 0.0001
 STEPS = 9000 // BATCH_SIZE + 1
 SAVE_PATH = '../res/train_output/model_checkpoint_unet.pt'
+REGULARIZE = False
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print('Using:', device)
@@ -75,7 +76,7 @@ def get_dataloader():
     return iter(trainLoader), iter(valLoader)
 
 def train(model, criterion, opt, scheduler):
-    global INIT_EPOCH, EPOCHS, BATCH_SIZE, SAVE_PATH, device
+    global INIT_EPOCH, EPOCHS, BATCH_SIZE, SAVE_PATH, REGULARIZE, device
     
     model.train()
     for epoch in range(INIT_EPOCH, EPOCHS):
@@ -92,12 +93,12 @@ def train(model, criterion, opt, scheduler):
                 mask, label = model(image)
                 loss = criterion([mask, label], [mask_gt, label_gt])
 
-                # regularization
-                weight = torch.tensor(0.).to(device) 
-                for parameter in model.parameters():
-                    weight += torch.norm(parameter)
-                l2_loss = 0.005 * weight
-                loss += l2_loss
+                if REGULARIZE:
+                    weight = torch.tensor(0.).to(device) 
+                    for parameter in model.parameters():
+                        weight += torch.norm(parameter)
+                    l2_loss = 0.005 * weight
+                    loss += l2_loss
 
                 loss.backward()                                                 # getting gradients
                 opt.step()                                                      # updating parameters
