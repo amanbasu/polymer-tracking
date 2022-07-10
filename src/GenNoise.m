@@ -48,22 +48,22 @@
 %
 %
 for snum = 1:200
-    ImSize  = 3630;  % real space of specimen in nanometers
+    ImSize  = 4290;  % real space of specimen in nanometers
     PolAng  = randi([0 90],1,1);   
     PolCurv = 5;
     PolDiam = randi([25 250],1,1);
     ProSize = 4;                                        % Eb1-GFP size in nm (4)
     LatProb = .01;   % there is a chance of binding anywhere on the lattice
     TipExp  = randi([50 2500],1,1);   % Exponent for creating probability of this distance in nm
-    TipProb = randi([500 900],1,1)/1000;    % Chance of being occupied if it is possible
+    TipProb = randi([50 350],1,1)/1000;    % Chance of being occupied if it is possible
     WaveL   = 515;
-    PhotSec = randi([10 200],1,1);   % photons per second (mean of Poisson dist)
+    PhotSec = randi([50 300],1,1);   % photons per second (mean of Poisson dist)
     PixSize = 66;    % the size the pixel would be at specimen in nanometers
     SubPix  = 3;     % number of x and y blocks to cut up the pixel position on tip
-    eNoise  = randi([50 700],1,1);   % std of gaussian distributed noise from electronics per sec
-    eDepth  = 15000; % maximum number of electrons in camera well
-    ADCval  = 8;     % conversion factor for electrons to gray levels
-    ExpTime = randi([200 300],1,1);   % camera exposure in milliseconds
+    eNoise  = randi([50 400],1,1);   % std of gaussian distributed noise from electronics per sec
+    eDepth  = 6000; % maximum number of electrons in camera well
+    ADCval  = 4;     % conversion factor for electrons to gray levels
+    ExpTime = randi([100 250],1,1);   % camera exposure in milliseconds
     IM      = zeros(ImSize,ImSize);                     % The final image
     %
     %%%%%% A. Object Model for Eb1-GFP positions on lattice

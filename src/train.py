@@ -5,7 +5,7 @@ from tqdm import tqdm
 from transform import *
 from torchvision import transforms
 from torch.utils.data import DataLoader
-from generator import CustomDataGenerator
+from generator2 import CustomDataGenerator
 from UNet import UNet
 
 INIT_EPOCH = 0
@@ -50,7 +50,7 @@ def get_dataloader():
         '../images/train', 
         transform=transforms.Compose([
             RandomFlip(0.7),
-            RandomCrop(IMG_SIZE, 0.9),
+            RandomCrop(IMG_SIZE, 0.8),
         ])
     )
     valDataset = CustomDataGenerator(

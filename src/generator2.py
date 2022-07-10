@@ -10,6 +10,7 @@ class CustomDataGenerator(torch.utils.data.Dataset):
         self.dir = root_dir
         self.subpixels = subpixels
         self.transform = transform                                              # image transforms for data augmentation
+        self.overlap = Overlap(size=31)
         self.images = sorted(glob.glob(self.dir + '/data_A/comet_*.tif'))
 
     def __len__(self):
@@ -20,10 +21,12 @@ class CustomDataGenerator(torch.utils.data.Dataset):
             idx = idx.tolist()
 
         # send noise instead
-        if np.random.random() < 0.0:
+        if np.random.random() < 0.3:
             return self.noisy_image(idx)
-        else:
+        elif np.random.random() < 0.8:
             return self.comet_image(idx)
+        else:
+            return self.overlap_image(idx) 
 
     def comet_image(self, idx):
         # make subpixel as one-hot label
@@ -35,7 +38,7 @@ class CustomDataGenerator(torch.utils.data.Dataset):
         fname = self.images[idx % len(self.images)]
         fname = fname.replace('data_A', f'data_{chr(65+subpixel)}')
         img = tifffile.imread(fname)                                            # meta (previously facebook :P)
-        
+         
         # assuming the comet/polymer tip is centered in the image
         size = len(img)
         tip = (size//2, size//2)
@@ -48,8 +51,7 @@ class CustomDataGenerator(torch.utils.data.Dataset):
 
         # normalize image
         img = img.astype(np.float32)
-        # img = (img - img.min()) / (img.max() - img.min())
-        img = img / 1000
+        img = np.clip(img, 0, 1000) / 1000
         img = np.expand_dims(img, axis=0)                                       # add channel dimension
         
         # treat tip as a segmentation mask
@@ -86,7 +88,6 @@ class CustomDataGenerator(torch.utils.data.Dataset):
 
         # normalize image
         img = img.astype(np.float32)
-        # img = (img - img.min()) / (img.max() - img.min())
         img = np.clip(img, 0, 1000) / 1000
         img = np.expand_dims(img, axis=0)                                       # add channel dimension
         
@@ -101,6 +102,45 @@ class CustomDataGenerator(torch.utils.data.Dataset):
         if self.train:
             return img, mask, subp_label
         return img, np.array(tip), np.argmax(subp_label), fname.split('/')[-1][:-4]
+
+    def overlap_image(self, idx):
+        # make subpixel as one-hot label
+        subpixel = idx // len(self.images)
+        subp_label = np.zeros((self.subpixels, 1))
+        subp_label[subpixel] = 1
+        
+        # read image
+        fname = self.images[idx % len(self.images)]
+        fname = fname.replace('data_A', f'data_{chr(65+subpixel)}')
+        img = tifffile.imread(fname)                                            # meta (previously facebook :P)
+
+        # read another random image
+        fname2 = np.random.choice(self.images)
+        fname2 = fname2.replace('data_A', f'data_{chr(65+subpixel)}')
+        img2 = tifffile.imread(fname2)  
+        
+        # assuming the comet/polymer tip is centered in the image
+        size = len(img)
+        tip = (size//2, size//2)
+        
+        sample = {'image1': img, 'tip1': tip, 'image2': img2, 'tip2': tip}
+        sample = self.overlap(sample)
+        img, tip = sample['image'], sample['tip']
+            
+        # normalize image
+        img = img.astype(np.float32)
+        img = np.clip(img, 0, 1000) / 1000
+        img = np.expand_dims(img, axis=0)                                       # add channel dimension
+        
+        # treat tip as a segmentation mask
+        mask = np.zeros_like(img[0])
+        mask[tip[0][0], tip[0][1]] = 1
+        mask[tip[1][0], tip[1][1]] = 1
+
+        subp_label = subp_label.reshape(-1)
+        if self.train:
+            return img, mask, subp_label
+        return img, np.array(tip[0]), np.argmax(subp_label), fname.split('/')[-1][:-4]
 
 class TestDataGenerator(torch.utils.data.Dataset):
 
@@ -122,8 +162,7 @@ class TestDataGenerator(torch.utils.data.Dataset):
         
         # normalize image
         img = img.astype(np.float32)
-        # img = (img - img.min()) / (img.max() - img.min())
-        img = img / 1000
+        img = np.clip(img, 0, 1000) / 1000
         img = np.expand_dims(img, axis=0)                                       # add channel dimension
         
         return img, fname.split('/')[-1][:-4]
