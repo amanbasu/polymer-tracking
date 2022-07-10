@@ -52,21 +52,28 @@ class RandomCrop(object):
     Crops the image randomly in a sample.
     '''
 
-    def __init__(self, size, prob=0.5, pad=5):
+    def __init__(self, size, prob=0.5, pad=5, noisy=False):
         assert isinstance(prob, (float, tuple))
         self.size = size
         self.prob = prob
         self.pad = pad
+        self.noisy = noisy
 
     def __call__(self, sample):
         image, tip = sample['image'], sample['tip']
         h, _ = image.shape
+        noisy = False
 
         if np.random.random() < self.prob:
-            # random crop
-            starti, startj = np.random.randint(
-                self.pad, h - self.size - (self.pad*2), size=2
-            )         
+            if self.noisy and np.random.random() < 0.2:
+                # crop of the background
+                starti, startj = np.random.randint(0, 2, size=2) 
+                noisy = True
+            else:
+                # random crop
+                starti, startj = np.random.randint(
+                    self.pad, h - self.size - (self.pad*2), size=2
+                )
         else:
             # center crop
             starti, startj = (h - self.size)//2, (h - self.size)//2            
@@ -74,6 +81,9 @@ class RandomCrop(object):
         endi, endj = starti + self.size, startj + self.size            
         image = image[starti:endi, startj:endj]
         tip = (tip[0] - starti, tip[1] - startj)
+
+        if noisy:
+            tip = (0, 0)
 
         sample['image'], sample['tip'] = image, tip
         return sample

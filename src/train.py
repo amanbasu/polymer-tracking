@@ -26,7 +26,7 @@ class dice_loss(torch.nn.Module):
         self.smooth = 1.
 
     def forward(self, logits, labels):
-        logf = torch.sigmoid(logits).view(-1)
+        logf = torch.sigmoid(logits.view(-1))
         labf = labels.view(-1)
         intersection = (logf * labf).sum()
 
@@ -49,8 +49,8 @@ def get_dataloader():
     trainDataset = CustomDataGenerator(
         '../images/train', 
         transform=transforms.Compose([
+            RandomCrop(IMG_SIZE, 0.8, noisy=True),
             RandomFlip(0.7),
-            RandomCrop(IMG_SIZE, 0.8),
         ])
     )
     valDataset = CustomDataGenerator(
@@ -139,7 +139,7 @@ def train(model, criterion, opt, scheduler):
 if __name__ == '__main__':
 
     # plug-in your model here
-    model = UNet(channels=1, classes=1, subpixels=8).to(device)  
+    model = UNet(channels=1, classes=1, subpixels=9).to(device)  
 
     criterion = combine_loss()
     opt = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
