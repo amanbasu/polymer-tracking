@@ -25,11 +25,13 @@ def predict(model, test_image):
     model.eval()
     with torch.no_grad():
         for f in range(t):
-            for r in range(0, h, IMG_SIZE):
-                for c in range(0, w, IMG_SIZE):
+            for r in range(0, h-IMG_SIZE, IMG_SIZE):
+                for c in range(0, w-IMG_SIZE, IMG_SIZE):
                     clip = test_image[f, r:r+IMG_SIZE, c:c+IMG_SIZE]
+                    clip = clip.astype(np.float32)
+                    clip = np.clip(clip, 0, 1000) / 1000
                     clip = np.expand_dims(clip, axis=(0, 1))
-                    clip = clip.to(device) 
+                    clip = torch.tensor(clip).to(device) 
                     mask, _ = model(clip)
                     save_predictions(
                         mask.cpu().numpy(),
@@ -39,9 +41,9 @@ def predict(model, test_image):
 if __name__ == '__main__':
 
     # plug-in your model here
-    model = UNet(channels=1, classes=1, subpixels=8).to(device)  
+    model = UNet(channels=1, classes=1, subpixels=9).to(device)  
     checkpoint = torch.load(LOAD_PATH)
     model.load_state_dict(checkpoint['model_state_dict'])
 
-    test_image = tifffile.imread('../images/Eb1WT100mscrop1.tif')
+    test_image = tifffile.imread('../images/Eb1WT100mscrop1f1_10.tif')
     predict(model, test_image)
