@@ -12,7 +12,7 @@ import tifffile, json
 BATCH_SIZE = 1024
 IMG_SIZE = 31
 LOAD_PATH = '../res/train_output/model_checkpoint_unet.pt'
-SAVE_PATH = '../res/test_pred/'
+SAVE_PATH = '../res/test_pred2/'
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print('Using:', device)
@@ -20,7 +20,7 @@ print('Using:', device)
 def get_dataloader():
     # replace with test
     testDataset = TestDataGenerator(
-        '../images/test'
+        '../images/test2'
     )
     testLoader = DataLoader(
         testDataset, 
