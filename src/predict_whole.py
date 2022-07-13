@@ -2,41 +2,46 @@ import torch
 import numpy as np
 from UNet import UNet
 import tifffile
+import tqdm
+import imageio
 
 IMG_SIZE = 31
+THRES = 0.5
 LOAD_PATH = '../res/train_output/model_checkpoint_unet.pt'
-SAVE_PATH = '../res/test_whole/'
+SAVE_PATH = '/N/slate/amanagar/polymer-tracking/'
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print('Using:', device)
-
-def save_predictions(mask, idx):
-    global SAVE_PATH
-
-    tifffile.imwrite(
-        SAVE_PATH + f'mask_{idx[0]}_{idx[1]}_{idx[2]}.tif',
-        data=mask[0]
-    )
     
+def preprocessing(img):
+    img = img.astype(np.float32)
+    img = np.clip(img, 0, 1000) / 1000
+    return img
+
 def predict(model, test_image):
     global device
     
     t, h, w = test_image.shape
-    model.eval()
+    image = torch.tensor(preprocessing(test_image)).to(device) 
+    whole_mask = torch.zeros_like(image).to(device)
     with torch.no_grad():
-        for f in range(t):
-            for r in range(0, h-IMG_SIZE, IMG_SIZE):
-                for c in range(0, w-IMG_SIZE, IMG_SIZE):
-                    clip = test_image[f, r:r+IMG_SIZE, c:c+IMG_SIZE]
-                    clip = clip.astype(np.float32)
-                    clip = np.clip(clip, 0, 1000) / 1000
-                    clip = np.expand_dims(clip, axis=(0, 1))
-                    clip = torch.tensor(clip).to(device) 
-                    mask, _ = model(clip)
-                    save_predictions(
-                        mask.cpu().numpy(),
-                        (f, r, c)
-                    )
+        for f in tqdm(range(t)):
+            stack = []
+            for r in range(0, h-IMG_SIZE, IMG_SIZE//3):
+                for c in range(0, w-IMG_SIZE, IMG_SIZE//3):
+                    clip = image[f, r:r+IMG_SIZE, c:c+IMG_SIZE]
+                    clip = torch.unsqueeze(clip, 0)
+                    stack += [clip]
+            mask, _ = model(torch.stack(stack))
+            mask = torch.sigmoid(mask)
+            idx = 0
+            for r in range(0, h-IMG_SIZE, IMG_SIZE//3):
+                for c in range(0, w-IMG_SIZE, IMG_SIZE//3):
+                    clip = mask[idx][0]
+                    whole_mask[f, r:r+IMG_SIZE, c:c+IMG_SIZE] += clip
+                    idx += 1
+    whole_mask = whole_mask.cpu().numpy()
+    return whole_mask
 
 if __name__ == '__main__':
 
@@ -44,6 +49,8 @@ if __name__ == '__main__':
     model = UNet(channels=1, classes=1, subpixels=9).to(device)  
     checkpoint = torch.load(LOAD_PATH)
     model.load_state_dict(checkpoint['model_state_dict'])
+    model.eval()
 
-    test_image = tifffile.imread('../images/Eb1WT100mscrop1f1_10.tif')
-    predict(model, test_image)
+    test_image = tifffile.imread(SAVE_PATH + 'Eb1WT100mscrop1.tif')
+    mask = predict(model, test_image)
+    imageio.mimsave(SAVE_PATH + 'Eb1WT100mscrop1.gif', list(mask))
