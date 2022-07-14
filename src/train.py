@@ -1,4 +1,3 @@
-import sys
 import torch
 import numpy as np
 from tqdm import tqdm
@@ -43,7 +42,7 @@ class combine_loss(torch.nn.Module):
     def forward(self, logits, labels):
         dice = self.dice_loss(logits[0], labels[0])
         bce = self.bceLoss(logits[1], labels[1].float())
-        return dice #+ bce
+        return dice + bce
             
 def get_dataloader():
     trainDataset = CustomDataGenerator(
@@ -56,7 +55,7 @@ def get_dataloader():
     valDataset = CustomDataGenerator(
         '../images/val',
         transform=transforms.Compose([
-            RandomCrop(IMG_SIZE, 0.0),
+            RandomCrop(IMG_SIZE, 0.0),                                          # center crop, not random
         ])
     )
     trainLoader = DataLoader(
@@ -157,6 +156,5 @@ if __name__ == '__main__':
         model.load_state_dict(checkpoint['model_state_dict'])
         opt.load_state_dict(checkpoint['optimizer_state_dict'])
         INIT_EPOCH = checkpoint['epoch']
-        # loss = checkpoint['loss']
 
     train(model, criterion, opt, scheduler)

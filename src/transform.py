@@ -114,8 +114,7 @@ class Overlap(object):
 
         sp = self.crop({'image': image2, 'tip': tip2})
         imgc, p2 = sp['image'], sp['tip']
-        subp = [1, 0, 0, 0, 0, 0, 0, 0, 0]
         img2, p2, _ = self.flip.flip(imgc, p2, subp, mode=mode2)
         
-        out = (img1 + img2)*0.7
+        out = (img1 + img2)*0.7                                                 # multiply to adjust the contrast
         return {'image': out.astype('uint16'), 'tip': [p1, p2]} 

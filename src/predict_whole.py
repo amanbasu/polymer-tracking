@@ -2,8 +2,7 @@ import torch
 import numpy as np
 from UNet import UNet
 import tifffile
-import tqdm
-import imageio
+from tqdm import tqdm
 
 IMG_SIZE = 31
 THRES = 0.5
@@ -53,4 +52,7 @@ if __name__ == '__main__':
 
     test_image = tifffile.imread(SAVE_PATH + 'Eb1WT100mscrop1.tif')
     mask = predict(model, test_image)
-    imageio.mimsave(SAVE_PATH + 'Eb1WT100mscrop1.gif', list(mask))
+    tifffile.imwrite(
+        SAVE_PATH + 'Eb1WT100mscrop1_mask.tif',
+        data=mask
+    )

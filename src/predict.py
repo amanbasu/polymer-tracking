@@ -1,9 +1,7 @@
-import sys
 import torch
 import numpy as np
 from tqdm import tqdm
 from transform import *
-from torchvision import transforms
 from torch.utils.data import DataLoader
 from generator import TestDataGenerator
 from UNet import UNet
@@ -75,7 +73,7 @@ def predict(model):
 if __name__ == '__main__':
 
     # plug-in your model here
-    model = UNet(channels=1, classes=1, subpixels=8).to(device)  
+    model = UNet(channels=1, classes=1, subpixels=9).to(device)  
     checkpoint = torch.load(LOAD_PATH)
     model.load_state_dict(checkpoint['model_state_dict'])
     predict(model)

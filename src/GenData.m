@@ -252,7 +252,7 @@ for snum = 1:1000
                 MM       = sum(reshape(MM,y,[]),1);
                 MM       = reshape(MM,n/y,[]).'; % Note transpose
                 % Noise model from electronics
-                MM       = MM + (eDepth*.1)+(randn(size(MM)).*(eNoise*(ExpTime/1000)));
+                MM       = MM + (eDepth*.043)+(randn(size(MM)).*(eNoise*(ExpTime/1000)));
                 MM       = floor(MM./ADCval);
                 MX(:,:,cnt) = MM;
             end
